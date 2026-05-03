@@ -1,0 +1,30 @@
+# --- IDE / OS Files ---
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.log
+
+# --- Spring Boot (Java/Maven/Gradle) ---
+target/
+build/
+.gradle/
+.settings/
+.classpath
+.project
+*.class
+*.jar
+*.war
+
+# --- React (Vite/Node) ---
+node_modules/
+dist/
+dist-ssr/
+*.local
+.env
+.env.*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+

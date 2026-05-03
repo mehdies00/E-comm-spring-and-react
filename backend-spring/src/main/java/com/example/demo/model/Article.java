@@ -1,9 +1,7 @@
 package com.example.demo.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
+import java.util.List;
 
 @Entity
 public class Article {
@@ -12,15 +10,24 @@ public class Article {
     private int idArticle;
     private String description;
     private String brand;
-    private double price;
+    private Double price;
+    private String imageUrl;
+    private String name;
+
+    @OneToMany(mappedBy = "article", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<CommandLine> commandLines;
 
     public Article() {
     }
 
-    public Article(String description, String brand, double price) {
+    public Article(String description, String brand, Double price, String imageUrl, String name,
+            List<CommandLine> commandLines) {
         this.description = description;
         this.brand = brand;
         this.price = price;
+        this.imageUrl = imageUrl;
+        this.name = name;
+        this.commandLines = commandLines;
     }
 
     public int getIdArticle() {
@@ -35,7 +42,7 @@ public class Article {
         return brand;
     }
 
-    public double getPrice() {
+    public Double getPrice() {
         return price;
     }
 
@@ -51,8 +58,32 @@ public class Article {
         this.brand = brand;
     }
 
-    public void setPrice(double price) {
+    public void setPrice(Double price) {
         this.price = price;
+    }
+
+    public List<CommandLine> getCommandLines() {
+        return commandLines;
+    }
+
+    public void setCommandLines(List<CommandLine> commandLines) {
+        this.commandLines = commandLines;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
 }
