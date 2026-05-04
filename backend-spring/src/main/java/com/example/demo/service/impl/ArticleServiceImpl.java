@@ -1,74 +1,78 @@
-package com.example.demo.controller;
+package com.example.demo.service.impl;
 
 import com.example.demo.model.Article;
+import com.example.demo.repository.ArticleRepository;
 import com.example.demo.service.ArticleService;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.util.Optional;
 
-@RestController
-@RequestMapping("/api/articles")
-public class ArticleController {
+@Service
+public class ArticleServiceImpl implements ArticleService {
 
-    private final ArticleService articleService;
+    private final ArticleRepository articleRepository;
 
-    public ArticleController(ArticleService articleService) {
-        this.articleService = articleService;
+    public ArticleServiceImpl(ArticleRepository articleRepository) {
+        this.articleRepository = articleRepository;
     }
 
-    // 1. Get all articles
-    @GetMapping
-    public ResponseEntity<List<Article>> getAllArticles() {
-        List<Article> articles = articleService.getAllArticles();
-        if (articles.isEmpty()) {
-            return ResponseEntity.noContent().build();
+    @Override
+    public List<Article> getAllArticles() {
+        return articleRepository.findAll();
+    }
+
+    @Override
+    public Optional<Article> getArticleById(Integer id) {
+        return articleRepository.findById(id);
+    }
+
+    @Override
+    @Transactional
+    public Article saveArticle(Article article) {
+        if (article.getPrice() == null || article.getPrice() < 0) {
+            throw new IllegalArgumentException("Price cannot be null or negative");
         }
-        return ResponseEntity.ok(articles);
-    }
-
-    // 2. Get article by ID
-    @GetMapping("/{id}")
-    public ResponseEntity<Article> getArticleById(@PathVariable Integer id) {
-        return articleService.getArticleById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    // 3. Create a new article
-    @PostMapping
-    public ResponseEntity<?> saveArticle(@RequestBody Article article) {
-        try {
-            Article savedArticle = articleService.saveArticle(article);
-            return ResponseEntity.status(HttpStatus.CREATED).body(savedArticle);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+        if (article.getImageUrl() == null || article.getImageUrl().isEmpty()) {
+            throw new IllegalArgumentException("Image URL cannot be null or empty");
         }
+
+        if (article.getName() == null || article.getName().isEmpty()) {
+            throw new IllegalArgumentException("Name cannot be null or empty");
+        }
+        return articleRepository.save(article);
     }
 
-    // 4. Update an existing article
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updateArticle(@PathVariable Integer id, @RequestBody Article article) {
-        try {
-            Article updatedArticle = articleService.updateArticle(id, article);
-            return ResponseEntity.ok(updatedArticle);
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage().contains("not found")) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-            }
-            return ResponseEntity.badRequest().body(e.getMessage());
+    @Override
+    @Transactional
+    public Article updateArticle(Integer id, Article article) {
+        Optional<Article> existingArticleOpt = articleRepository.findById(id);
+        if (existingArticleOpt.isEmpty()) {
+            throw new IllegalArgumentException("Article with id " + id + " not found");
         }
+        if (article.getPrice() != null && article.getPrice() < 0) {
+            throw new IllegalArgumentException("Price cannot be negative");
+        }
+        if (article.getImageUrl() != null && article.getImageUrl().isEmpty()) {
+            throw new IllegalArgumentException("Image URL cannot be empty");
+        }
+        if (article.getName() != null && article.getName().isEmpty()) {
+            throw new IllegalArgumentException("Name cannot be empty");
+        }
+        Article existingArticle = existingArticleOpt.get();
+        existingArticle.setName(article.getName());
+        existingArticle.setDescription(article.getDescription());
+        existingArticle.setPrice(article.getPrice());
+        existingArticle.setImageUrl(article.getImageUrl());
+        return articleRepository.save(existingArticle);
     }
 
-    // 5. Delete an article
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteArticle(@PathVariable Integer id) {
-        try {
-            articleService.deleteArticle(id);
-            return ResponseEntity.noContent().build();
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.notFound().build();
+    @Override
+    @Transactional
+    public void deleteArticle(Integer id) {
+        if (!articleRepository.existsById(id)) {
+            throw new IllegalArgumentException("Article with id " + id + " not found");
         }
+        articleRepository.deleteById(id);
     }
 }

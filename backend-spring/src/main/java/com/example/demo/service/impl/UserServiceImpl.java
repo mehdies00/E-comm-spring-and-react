@@ -36,10 +36,16 @@ public class UserServiceImpl implements UserService {
         }
         if (user.getPassword() == null || user.getPassword().trim().isEmpty()) {
             throw new IllegalArgumentException("Password cannot be empty");
+
         }
-        if (user.getConnectionNumber() == null || user.getConnectionNumber() < 0) {
-            throw new IllegalArgumentException("Connection number cannot be null or negative");
+        if (user.getConnectionNumber() == null) {
+            user.setConnectionNumber(0);
         }
+
+        if (user.getConnectionNumber() < 0) {
+            throw new IllegalArgumentException("Connection number cannot be negative");
+        }
+
         return userRepository.save(user);
     }
 
@@ -54,9 +60,6 @@ public class UserServiceImpl implements UserService {
         }
         if (userDetails.getPassword() == null || userDetails.getPassword().trim().isEmpty()) {
             throw new IllegalArgumentException("Password cannot be empty");
-        }
-        if (userDetails.getConnectionNumber() == null || userDetails.getConnectionNumber() < 0) {
-            throw new IllegalArgumentException("Connection number cannot be null or negative");
         }
 
         existingUser.setLogin(userDetails.getLogin());
