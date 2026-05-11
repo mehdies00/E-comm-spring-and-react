@@ -37,7 +37,7 @@ public class UserController {
     @PostMapping
     public ResponseEntity<?> saveUser(@RequestBody User user) {
         try {
-            User savedUser = userService.saveUser(user);
+            User savedUser = userService.saveUser(user.getLogin(), user.getPassword());
             return ResponseEntity.status(HttpStatus.CREATED).body(savedUser);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());

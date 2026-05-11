@@ -3,6 +3,7 @@ package com.example.demo.service.impl;
 import com.example.demo.model.User;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.UserService;
+import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +20,20 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public User findByLogin(String login) {
+        return userRepository.findByLogin(login)
+                .orElseThrow(() -> new IllegalArgumentException("No account found with this email"));
+    }
+
+    @Override
+    public boolean checkPassword(String raw, String encoded) {
+        if (!BCrypt.checkpw(raw, encoded)) {
+            throw new IllegalArgumentException("Invalid password");
+        }
+        return true;
+    }
+
+    @Override
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
@@ -30,22 +45,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public User saveUser(User user) {
-        if (user.getLogin() == null || user.getLogin().trim().isEmpty()) {
-            throw new IllegalArgumentException("Login cannot be empty");
+    public User saveUser(String login, String password) {
+        if (userRepository.findByLogin(login).isPresent()) {
+            throw new IllegalArgumentException("Login already taken");
         }
-        if (user.getPassword() == null || user.getPassword().trim().isEmpty()) {
-            throw new IllegalArgumentException("Password cannot be empty");
-
-        }
-        if (user.getConnectionNumber() == null) {
-            user.setConnectionNumber(0);
-        }
-
-        if (user.getConnectionNumber() < 0) {
-            throw new IllegalArgumentException("Connection number cannot be negative");
-        }
-
+        User user = new User();
+        user.setLogin(login);
+        user.setPassword(BCrypt.hashpw(password, BCrypt.gensalt()));
+        user.setConnectionNumber(0);
         return userRepository.save(user);
     }
 
@@ -53,18 +60,15 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public User updateUser(Integer id, User userDetails) {
         User existingUser = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found for ID: " + id));
-
-        if (userDetails.getLogin() == null || userDetails.getLogin().trim().isEmpty()) {
-            throw new IllegalArgumentException("Login cannot be empty");
-        }
-        if (userDetails.getPassword() == null || userDetails.getPassword().trim().isEmpty()) {
-            throw new IllegalArgumentException("Password cannot be empty");
-        }
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         existingUser.setLogin(userDetails.getLogin());
 
-        existingUser.setPassword(userDetails.getPassword());
+        if (userDetails.getPassword() != null && !userDetails.getPassword().isBlank()) {
+            existingUser.setPassword(
+                    BCrypt.hashpw(userDetails.getPassword(), BCrypt.gensalt()));
+        }
+
         existingUser.setConnectionNumber(userDetails.getConnectionNumber());
 
         return userRepository.save(existingUser);
